@@ -21,7 +21,7 @@
               const country = row.Country.trim();
               countryData[country] = {
                 category: parseFloat(row.Category),
-                policy: row.Policy?.trim() || "No policy info",
+                policy: row.Policy?.trim() || "No Established Youth Policy",
                 link: row.Link?.trim() || null
               };
             }
@@ -47,14 +47,16 @@
     fetch('https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json')
       .then(res => res.json())
       .then(geoData => {
-        function getColor(d) {
-          return d > 2 ? '#800026' :
-                 d > 1 ? '#BD0026' :
-                 d > 0 ? '#E31A1C' :
-                 d === 0 ? '#FC4E2A' :
-                           '#FFEDA0';
-        }
-
+function getColor(d) {
+  return (
+    d === 4 ? '#d00c04' :   
+    d === 5 ? '#e03c28' :  
+    d === 3 ? '#ed6a5a' :    
+    d === 2 ? '#f79b90' :    
+    d === 1 ? '#fcd7d5' :    
+             '#fff1f0'        
+  );
+}
         function style(feature) {
           const name = feature.properties.name;
           const value = countryData[name]?.category || 0;
@@ -76,7 +78,7 @@
             const popupHtml = `
               <strong>${name}</strong><br/>
               Policy: ${data.policy}<br/>
-              ${data.link ? `<a href="${data.link}" target="_blank">More Info</a>` : ''}
+              ${data.link ? `<a href="${data.link}" target="_blank">Policy Details</a>` : ''}
             `;
             layer.bindPopup(popupHtml);
           } else {
