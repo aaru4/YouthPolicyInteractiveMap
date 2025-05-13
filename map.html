@@ -19,14 +19,12 @@
   <script src="https://unpkg.com/leaflet-ajax"></script>
 
   <script>
-    var map = L.map('map').setView([37.8, -96], 4); // US centered
+    var map = L.map('map').setView([20, 0], 2);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
-
-    // Load GeoJSON (replace with your own URL or embed inline)
-    fetch('https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/geojson/us-states.json')
+    fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vQXIQ9fnxot2VSAp-RtkOWdqryOiOzrHl11jqVszXfTH5WFJY3XiP3Eu6ULKwsEEz1Hfe51U5ViDjYa/pub?gid=1061143517&single=true&output=csv')
       .then(res => res.json())
       .then(data => {
         function getColor(d) {
