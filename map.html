@@ -2,6 +2,7 @@
 <div id="output" style="padding: 1em;"></div>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 
@@ -17,7 +18,12 @@
         complete: function(results) {
           results.data.forEach(row => {
             if (row.Country && row.Category) {
-              countryData[row.Country.trim()] = parseFloat(row.Category);
+              const country = row.Country.trim();
+              countryData[country] = {
+                category: parseFloat(row.Category),
+                policy: row.Policy?.trim() || "No policy info",
+                link: row.Link?.trim() || null
+              };
             }
           });
 
@@ -34,26 +40,24 @@
     });
 
   function loadMap() {
-    var map = L.map('map').setView([20, 0], 2);
+    const map = L.map('map').setView([20, 0], 2);
+
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
     fetch('https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json')
       .then(res => res.json())
       .then(geoData => {
         function getColor(d) {
-          return d > 1000 ? '#800026' :
-                 d > 500  ? '#BD0026' :
-                 d > 200  ? '#E31A1C' :
-                 d > 100  ? '#FC4E2A' :
-                 d > 50   ? '#FD8D3C' :
-                 d > 20   ? '#FEB24C' :
-                 d > 10   ? '#FED976' :
-                            '#FFEDA0';
+          return d > 2 ? '#800026' :
+                 d > 1 ? '#BD0026' :
+                 d > 0 ? '#E31A1C' :
+                 d === 0 ? '#FC4E2A' :
+                           '#FFEDA0';
         }
 
         function style(feature) {
           const name = feature.properties.name;
-          const value = countryData[name] || 0;
+          const value = countryData[name]?.category || 0;
           return {
             fillColor: getColor(value),
             weight: 1,
@@ -66,8 +70,18 @@
 
         function onEachFeature(feature, layer) {
           const name = feature.properties.name;
-          const value = countryData[name] || "No data";
-          layer.bindPopup(`<strong>${name}</strong><br/>Value: ${value}`);
+          const data = countryData[name];
+
+          if (data) {
+            const popupHtml = `
+              <strong>${name}</strong><br/>
+              Policy: ${data.policy}<br/>
+              ${data.link ? `<a href="${data.link}" target="_blank">More Info</a>` : ''}
+            `;
+            layer.bindPopup(popupHtml);
+          } else {
+            layer.bindPopup(`<strong>${name}</strong><br/>No data available`);
+          }
         }
 
         L.geoJson(geoData, {
