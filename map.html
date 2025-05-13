@@ -21,16 +21,16 @@
             }
           });
 
-          output.innerHTML = "✅ Data loaded. Rendering map...";
+          output.innerHTML = "Data loaded. Rendering map...";
           loadMap();
         },
         error: err => {
-          output.innerHTML = "❌ Error parsing CSV: " + err.message;
+          output.innerHTML = "Error parsing CSV: " + err.message;
         }
       });
     })
     .catch(err => {
-      output.innerHTML = "❌ Failed to fetch CSV: " + err.message;
+      output.innerHTML = "Failed to fetch CSV: " + err.message;
     });
 
   function loadMap() {
