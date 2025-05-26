@@ -1,95 +1,134 @@
-<div id="map" style="height: 600px;"></div>
-<div id="output" style="padding: 1em;"></div>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Youth Policy Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+  <style>
+    body {
+      font-family: sans-serif;
+    }
+    #map {
+      height: 600px;
+    }
+  </style>
+</head>
+<body>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+  <div id="map"></div>
 
-<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 
-<script>
-  const output = document.getElementById('output');
-  let countryData = {};
+  <script>
+    const output = document.getElementById('output');
+    let countryData = {};
 
-  fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vQXIQ9fnxot2VSAp-RtkOWdqryOiOzrHl11jqVszXfTH5WFJY3XiP3Eu6ULKwsEEz1Hfe51U5ViDjYa/pub?output=csv')
-    .then(response => response.text())
-    .then(csv => {
-      Papa.parse(csv, {
-        header: true,
-        complete: function(results) {
-          results.data.forEach(row => {
-            if (row.Country && row.Category) {
-              const country = row.Country.trim();
-              countryData[country] = {
-                category: parseFloat(row.Category),
-                policy: row.Policy?.trim() || "No Established Youth Policy",
-                link: row.Link?.trim() || null
-              };
-            }
-          });
+    // Optional: manual name fixes (e.g., for "Bahamas, The" → "Bahamas")
+    const nameFixes = {
+      "Bahamas, The": "Bahamas",
+      "Gambia, The": "Gambia",
+      "Côte d'Ivoire": "Cote d'Ivoire",
+      "Micronesia (Federated States of)": "Micronesia",
+      "Democratic People's Republic of Korea": "North Korea",
+      "Republic of Korea": "South Korea",
+      "Democratic Republic of the Congo": "Democratic Republic of Congo",
+      "Syrian Arab Republic": "Syria",
+      "Viet Nam": "Vietnam",
+      "United States of America": "United States",
+      "Russian Federation": "Russia",
+      "Lao People's Democratic Republic": "Laos",
+      "Iran (Islamic Republic of)": "Iran",
+      "Bolivia (Plur. State of)": "Bolivia",
+      "United Republic of Tanzania": "Tanzania"
+    };
 
-          output.innerHTML = "Data loaded. Rendering map...";
-          loadMap();
-        },
-        error: err => {
-          output.innerHTML = "Error parsing CSV: " + err.message;
-        }
-      });
-    })
-    .catch(err => {
-      output.innerHTML = "Failed to fetch CSV: " + err.message;
-    });
+    fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vQXIQ9fnxot2VSAp-RtkOWdqryOiOzrHl11jqVszXfTH5WFJY3XiP3Eu6ULKwsEEz1Hfe51U5ViDjYa/pub?output=csv')
+      .then(response => response.text())
+      .then(csv => {
+        Papa.parse(csv, {
+          header: true,
+          complete: function(results) {
+            results.data.forEach(row => {
+              if (row.Country && row.Category) {
+                const country = row.Country.trim();
+                countryData[country] = {
+                  category: parseFloat(row.Category),
+                  policy: row.Policy?.trim() || "No Established Youth Policy",
+                  link: row.Link?.trim() || null
+                };
+              }
+            });
 
-  function loadMap() {
-    const map = L.map('map').setView([20, 0], 2);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-    fetch('https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json')
-      .then(res => res.json())
-      .then(geoData => {
-function getColor(d) {
-  return (
-    d === 4 ? '#d00c04' :   
-    d === 5 ? '#fe2d2d' :  
-    d === 3 ? '#fb7830' :    
-    d === 2 ? '#fecf02' :    
-    d === 1 ? '#fce681' :    
-             '#ffffff'        
-  );
-}
-        function style(feature) {
-          const name = feature.properties.name;
-          const value = countryData[name]?.category || 0;
-          return {
-            fillColor: getColor(value),
-            weight: 1,
-            opacity: 1,
-            color: 'white',
-            dashArray: '2',
-            fillOpacity: 1.0
-          };
-        }
-
-        function onEachFeature(feature, layer) {
-          const name = feature.properties.name;
-          const data = countryData[name];
-
-          if (data) {
-            const popupHtml = `
-              <strong>${name}</strong><br/>
-              Policy: ${data.policy}<br/>
-              ${data.link ? `<a href="${data.link}" target="_blank">Policy Details</a>` : ''}
-            `;
-            layer.bindPopup(popupHtml);
-          } else {
-            layer.bindPopup(`<strong>${name}</strong><br/>No data available`);
+            loadMap();
+          },
+          error: err => {
+            output.innerHTML = "Error parsing CSV: " + err.message;
           }
-        }
-
-        L.geoJson(geoData, {
-          style: style,
-          onEachFeature: onEachFeature
-        }).addTo(map);
+        });
+      })
+      .catch(err => {
+        output.innerHTML = "Failed to fetch CSV: " + err.message;
       });
-  }
-</script>
+
+    function loadMap() {
+      const map = L.map('map').setView([20, 0], 2);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+      fetch('https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json')
+        .then(res => res.json())
+        .then(geoData => {
+
+          function getColor(d) {
+            return (
+              d === 4 ? '#d00c04' :
+              d === 5 ? '#fe2d2d' :
+              d === 3 ? '#fb7830' :
+              d === 2 ? '#fecf02' :
+              d === 1 ? '#fce681' :
+                       '#ffffff'
+            );
+          }
+
+          function style(feature) {
+            const rawName = feature.properties.name;
+            const name = nameFixes[rawName] || rawName;
+            const value = countryData[name]?.category || 0;
+            return {
+              fillColor: getColor(value),
+              weight: 1,
+              opacity: 1,
+              color: 'white',
+              dashArray: '2',
+              fillOpacity: 1.0
+            };
+          }
+
+          function onEachFeature(feature, layer) {
+            const rawName = feature.properties.name;
+            const name = nameFixes[rawName] || rawName;
+            const data = countryData[name];
+
+            if (data) {
+              const popupHtml = `
+                <strong>${name}</strong><br/>
+                Policy: ${data.policy}<br/>
+                ${data.link ? `<a href="${data.link}" target="_blank">Policy Details</a>` : ''}
+              `;
+              layer.bindPopup(popupHtml);
+            } else {
+              layer.bindPopup(`<strong>${name}</strong><br/>No data available`);
+            }
+          }
+
+          L.geoJson(geoData, {
+            style: style,
+            onEachFeature: onEachFeature
+          }).addTo(map);
+        });
+    }
+  </script>
+
+</body>
+</html>
